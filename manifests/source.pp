@@ -45,7 +45,11 @@ define apt::source(
     group   => root,
     mode    => '0644',
     content => template('apt/_header.erb', 'apt/source.list.erb'),
-    notify  => Exec['apt_update'],
+    notify  => Apt::Update_source["${name}.list"],
+  }
+
+  apt::update_source { "${name}.list":
+    ensure => $ensure
   }
 
 
@@ -70,7 +74,7 @@ define apt::source(
       tries       => 3,
       try_sleep   => 1,
       subscribe   => File["${name}.list"],
-      before      => Exec['apt_update'],
+      before      => Apt::Update_source["${name}.list"],
     }
   }
 
@@ -82,12 +86,12 @@ define apt::source(
       key_server  => $key_server,
       key_content => $key_content,
       key_source  => $key_source,
-      before      => File["${name}.list"],
+      before      => Apt::Update_source["${name}.list"],
     }
   }
 
   # Need anchor to provide containment for dependencies.
   anchor { "apt::source::${name}":
-    require => Class['apt::update'],
+    require => Apt::Update_source["${name}.list"],
   }
 }

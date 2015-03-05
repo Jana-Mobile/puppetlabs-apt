@@ -53,7 +53,7 @@ define apt::ppa(
         unless      => "/usr/bin/test -s ${sources_list_d}/${sources_list_d_filename}",
         user        => 'root',
         logoutput   => 'on_failure',
-        notify      => Exec['apt_update'],
+        notify      => Apt::Update_source[$sources_list_d_filename],
         require     => [
         File['sources.list.d'],
         Package[$package],
@@ -64,17 +64,24 @@ define apt::ppa(
         ensure  => file,
         require => Exec["add-apt-repository-${name}"],
     }
+
+    apt::update_source { $sources_list_d_filename: }
   }
   else {
 
     file { "${sources_list_d}/${sources_list_d_filename}":
         ensure => 'absent',
-        notify => Exec['apt_update'],
+        notify => Apt::Update_source[$sources_list_d_filename],
+    }
+
+    apt::update_source { $sources_list_d_filename:
+      ensure => absent
     }
   }
 
+
   # Need anchor to provide containment for dependencies.
   anchor { "apt::ppa::${name}":
-    require => Class['apt::update'],
+    require => Apt::Update_source[$sources_list_d_filename],
   }
 }
